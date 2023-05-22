@@ -100,7 +100,11 @@ static const struct led_strip_driver_api apa102_api = {
 	static const struct apa102_config apa102_##idx##_config = {	 \
 		.bus = SPI_DT_SPEC_INST_GET(				 \
 			idx,						 \
-			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), \
+			SPI_OP_MODE_MASTER |				 \
+			 SPI_TRANSFER_MSB |				 \
+			 SPI_WORD_SET(8) |				 \
+			 SPI_MODE_CPOL |				 \
+			 SPI_MODE_CPHA,					 \
 			0),						 \
 	};								 \
 									 \
