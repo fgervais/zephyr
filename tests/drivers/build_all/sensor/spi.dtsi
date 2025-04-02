@@ -439,3 +439,10 @@ test_spi_ad2s1210: ad2s1210@35 {
 	reset-gpios = <&test_gpio 7 (GPIO_ACTIVE_LOW)>;
 	clock-frequency = <8192000>;
 };
+
+test_spi_max30001:max30001@33 {
+	compatible = "invensense,max30001";
+	reg = <0x33>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+};

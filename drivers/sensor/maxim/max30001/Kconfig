@@ -1,0 +1,66 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MAX30001
+	bool "MAX30001 biopotential and bioimpedance analog front-end"
+	default y
+	depends on DT_HAS_MAXIM_MAX30001_ENABLED
+	select SPI
+	select SPI_RTIO
+	help
+	  Enable driver for MAX30001 biopotential and bioimpedance analog front-end
+	  tracking device.
+
+if MAX30001
+
+choice
+	prompt "Trigger mode"
+	default MAX30001_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver
+
+config MAX30001_TRIGGER_NONE
+	bool "No trigger"
+
+config MAX30001_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX30001),int-gpios)
+	depends on !MAX30001_STREAM
+	select MAX30001_TRIGGER
+
+config MAX30001_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX30001),int-gpios)
+	depends on !MAX30001_STREAM
+	select MAX30001_TRIGGER
+
+endchoice
+
+config MAX30001_TRIGGER
+	bool
+
+config MAX30001_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on MAX30001_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  The priority of the thread used for handling triggers.
+
+config MAX30001_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on MAX30001_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  The thread stack size.
+
+config MAX30001_STREAM
+	bool "Streaming mode"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX30001),int-gpios)
+	help
+	  Enable streaming of sensor data.
+
+endif # MAX30001
