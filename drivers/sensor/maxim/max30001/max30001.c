@@ -240,7 +240,7 @@ static inline void max30001_submit_one_shot(const struct device *dev,
 	struct rtio_regs out_fifo_regs;
 	struct rtio_regs_list fifo_regs_list[] = {
 		{
-			REG_ECG_FIFO | REG_SPI_READ_BIT,
+			(REG_ECG_FIFO << 1) | REG_SPI_READ_BIT,
 			edata->payload.ecg_fifo_data,
 			ARRAY_SIZE(edata->payload.ecg_fifo_data),
 		},
