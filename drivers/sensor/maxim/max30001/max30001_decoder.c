@@ -199,14 +199,10 @@ int max30001_encode(const struct device *dev,
 		    const size_t num_channels,
 		    uint8_t *buf)
 {
-	// Need commit f4da9b97058e0fcde0929e43f5ac6a2f8c04bf62
-	// for sensor_clock_get_cycles()
-
-
 	struct max30001_encoded_data *edata = (struct max30001_encoded_data *)buf;
 	// const struct max30001_config *dev_config = dev->config;
-	// uint64_t cycles;
-	// int err;
+	uint64_t cycles;
+	int err;
 
 	edata->header.channels = 0;
 
@@ -214,10 +210,10 @@ int max30001_encode(const struct device *dev,
 		edata->header.channels |= max30001_encode_channel(channels[i].chan_type);
 	}
 
-	// err = sensor_clock_get_cycles(&cycles);
-	// if (err != 0) {
-	// 	return err;
-	// }
+	err = sensor_clock_get_cycles(&cycles);
+	if (err != 0) {
+		return err;
+	}
 
 	edata->header.events = 0;
 	// edata->header.accel_fs = dev_config->settings.accel.fs;

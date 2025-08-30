@@ -13,6 +13,7 @@
 
 #if defined(CONFIG_SENSOR_ASYNC_API)
 #include <zephyr/rtio/work.h>
+#include <zephyr/rtio/regmap.h>
 #endif /* CONFIG_SENSOR_ASYNC_API */
 
 #include "max30001.h"
@@ -163,29 +164,45 @@ static int max30001_channel_get(const struct device *dev,
 
 #if defined(CONFIG_SENSOR_ASYNC_API)
 
-static void max30001_complete_result(struct rtio *ctx,
-				     const struct rtio_sqe *sqe,
-				     void *arg)
+// static void max30001_complete_result(struct rtio *ctx,
+// 				     const struct rtio_sqe *sqe,
+// 				     void *arg)
+// {
+// 	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)sqe->userdata;
+// 	struct rtio_cqe *cqe;
+// 	int err = 0;
+
+// 	do {
+// 		cqe = rtio_cqe_consume(ctx);
+// 		if (cqe != NULL) {
+// 			err = cqe->result;
+// 			rtio_cqe_release(ctx, cqe);
+// 		}
+// 	} while (cqe != NULL);
+
+// 	if (err) {
+// 		rtio_iodev_sqe_err(iodev_sqe, err);
+// 	} else {
+// 		rtio_iodev_sqe_ok(iodev_sqe, 0);
+// 	}
+
+// 	LOG_DBG("One-shot fetch completed");
+// }
+
+static void max30001_one_shot_complete_cb(struct rtio *ctx,
+					  const struct rtio_sqe *sqe,
+					  void *arg)
 {
 	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)sqe->userdata;
-	struct rtio_cqe *cqe;
 	int err = 0;
 
-	do {
-		cqe = rtio_cqe_consume(ctx);
-		if (cqe != NULL) {
-			err = cqe->result;
-			rtio_cqe_release(ctx, cqe);
-		}
-	} while (cqe != NULL);
+	rtio_flush_completion_queue(ctx);
 
 	if (err) {
 		rtio_iodev_sqe_err(iodev_sqe, err);
 	} else {
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
 	}
-
-	LOG_DBG("One-shot fetch completed");
 }
 
 static inline void max30001_submit_one_shot(const struct device *dev,
@@ -217,40 +234,74 @@ static inline void max30001_submit_one_shot(const struct device *dev,
 		return;
 	}
 
-	struct rtio_sqe *write_sqe = rtio_sqe_acquire(data->rtio.ctx);
-	struct rtio_sqe *read_sqe = rtio_sqe_acquire(data->rtio.ctx);
-	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(data->rtio.ctx);
 
-	if (!write_sqe || !read_sqe | !complete_sqe) {
-		LOG_ERR("Failed to acquire RTIO SQEs");
-		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
-		return;
-	}
 
-	uint8_t val = REG_ECG_FIFO | REG_SPI_READ_BIT;
+	struct rtio_regs out_fifo_regs;
+	struct rtio_regs_list fifo_regs_list[] = {
+		{
+			REG_ECG_FIFO | REG_SPI_READ_BIT,
+			(uint8_t *)edata->payload.buf,
+			3,
+		},
+	};
 
-	rtio_sqe_prep_tiny_write(write_sqe,
-				 data->rtio.iodev,
-				 RTIO_PRIO_HIGH,
-				 &val,
-				 1,
-				NULL);
-	write_sqe->flags |= RTIO_SQE_TRANSACTION;
+	out_fifo_regs.rtio_regs_list = fifo_regs_list;
+	out_fifo_regs.rtio_regs_num = ARRAY_SIZE(fifo_regs_list);
 
-	rtio_sqe_prep_read(read_sqe,
-			   data->rtio.iodev,
-			   RTIO_PRIO_HIGH,
-			   edata->payload.buf,
-			   sizeof(edata->payload.buf),
-			   NULL);
-	read_sqe->flags |= RTIO_SQE_CHAINED;
+	/*
+	 * Prepare rtio enabled bus to read IIS3DWB_OUTX_L_A register
+	 * where accelerometer data is available.
+	 * Then iis3dwb_one_shot_complete_cb callback will be invoked.
+	 *
+	 * STMEMSC API equivalent code:
+	 *
+	 *   uint8_t accel_raw[6];
+	 *
+	 *   iis3dwb_acceleration_raw_get(&dev_ctx, accel_raw);
+	 */
+	rtio_read_regs_async(data->rtio.ctx, data->rtio.iodev, RTIO_BUS_SPI,
+			     &out_fifo_regs, iodev_sqe, dev,
+			     max30001_one_shot_complete_cb);
 
-	rtio_sqe_prep_callback_no_cqe(complete_sqe,
-				      max30001_complete_result,
-				      (void *)dev,
-				      iodev_sqe);
 
-	rtio_submit(data->rtio.ctx, 0);
+
+
+
+
+	// struct rtio_sqe *write_sqe = rtio_sqe_acquire(data->rtio.ctx);
+	// struct rtio_sqe *read_sqe = rtio_sqe_acquire(data->rtio.ctx);
+	// struct rtio_sqe *complete_sqe = rtio_sqe_acquire(data->rtio.ctx);
+
+	// if (!write_sqe || !read_sqe | !complete_sqe) {
+	// 	LOG_ERR("Failed to acquire RTIO SQEs");
+	// 	rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+	// 	return;
+	// }
+
+	// uint8_t val = REG_ECG_FIFO | REG_SPI_READ_BIT;
+
+	// rtio_sqe_prep_tiny_write(write_sqe,
+	// 			 data->rtio.iodev,
+	// 			 RTIO_PRIO_HIGH,
+	// 			 &val,
+	// 			 1,
+	// 			NULL);
+	// write_sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	// rtio_sqe_prep_read(read_sqe,
+	// 		   data->rtio.iodev,
+	// 		   RTIO_PRIO_HIGH,
+	// 		   edata->payload.buf,
+	// 		   sizeof(edata->payload.buf),
+	// 		   NULL);
+	// read_sqe->flags |= RTIO_SQE_CHAINED;
+
+	// rtio_sqe_prep_callback_no_cqe(complete_sqe,
+	// 			      max30001_complete_result,
+	// 			      (void *)dev,
+	// 			      iodev_sqe);
+
+	// rtio_submit(data->rtio.ctx, 0);
 }
 
 static void max30001_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
