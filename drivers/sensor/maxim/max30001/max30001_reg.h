@@ -73,7 +73,7 @@
 #define REG_CNFG_EMUX_ECG_OPENP			BIT(21)
 #define REG_CNFG_EMUX_ECG_OPENN			BIT(20)
 
-
+#define REG_ECG_FIFO_LEN			3
 
 
 /* Register Bank 0 */

@@ -13,6 +13,9 @@
 #include <zephyr/dt-bindings/sensor/max30001.h>
 #include <zephyr/rtio/rtio.h>
 
+#include "max30001_reg.h"
+
+
 // struct max30001_encoded_payload {
 // 	union {
 // 		uint8_t buf[14];
@@ -63,16 +66,17 @@
 // };
 
 struct max30001_encoded_payload {
-	uint8_t buf[3];
-	union {
-		uint32_t data;
-		// uint32_t readings[1];
-		struct {
-			uint32_t ptag : 3;
-			uint32_t etag : 3;
-			int32_t ecg : 18;
-		} __attribute__((__packed__));
-	};
+	uint8_t ecg_fifo_data[REG_ECG_FIFO_LEN];
+	// uint8_t buf[3];
+	// union {
+	// 	uint32_t data;
+	// 	// uint32_t readings[1];
+	// 	struct {
+	// 		uint32_t ptag : 3;
+	// 		uint32_t etag : 3;
+	// 		int32_t ecg : 18;
+	// 	} __attribute__((__packed__));
+	// };
 };
 
 struct max30001_encoded_header {

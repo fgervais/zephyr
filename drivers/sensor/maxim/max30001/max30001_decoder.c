@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// #include <zephyr/drivers/sensor_clock.h>
+#include <zephyr/drivers/sensor_clock.h>
 
 #include "max30001.h"
 #include "max30001_reg.h"
@@ -218,8 +218,7 @@ int max30001_encode(const struct device *dev,
 	edata->header.events = 0;
 	// edata->header.accel_fs = dev_config->settings.accel.fs;
 	// edata->header.gyro_fs = dev_config->settings.gyro.fs;
-	// edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
-	edata->header.timestamp = 0;
+	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	return 0;
 }
@@ -310,6 +309,8 @@ static int max30001_one_shot_decode(const uint8_t *buffer,
 	struct max30001_encoded_data *edata = (struct max30001_encoded_data *)buffer;
 	uint8_t channel_request;
 	// int err;
+
+	LOG_DBG("max30001_one_shot_decode:");
 
 	if (*fit != 0) {
 		return 0;

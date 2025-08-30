@@ -79,16 +79,17 @@ static int max30001_sample_fetch(const struct device *dev,
 
 	err = max30001_bus_read(dev,
 				REG_ECG_FIFO,
-				edata->payload.buf,
-				sizeof(edata->payload.buf));
-	if (err == 0) {
-		edata->payload.data = ((uint32_t)edata->payload.buf[0] << 16) |
-                 		       ((uint32_t)edata->payload.buf[1] << 8) |
-                 		       ((uint32_t)edata->payload.buf[2]);
-	}
+				edata->payload.ecg_fifo_data,
+				sizeof(edata->payload.ecg_fifo_data));
+	// if (err == 0) {
+	// 	edata->payload.data =
+	// 		((uint32_t)edata->payload.ecg_fifo_data[0] << 16) |
+	// 		((uint32_t)edata->payload.ecg_fifo_data[1] << 8) |
+	// 		((uint32_t)edata->payload.ecg_fifo_data[2]);
+	// }
 
-	LOG_HEXDUMP_DBG(edata->payload.buf,
-			sizeof(edata->payload.buf),
+	LOG_HEXDUMP_DBG(edata->payload.ecg_fifo_data,
+			sizeof(edata->payload.ecg_fifo_data),
 			"MAX30001 data");
 
 	return err;
@@ -105,12 +106,12 @@ static int max30001_channel_get(const struct device *dev,
 	case SENSOR_CHAN_VOLTAGE:
 		LOG_DBG("max30001_channel_get:");
 		LOG_DBG("├── gain: %d", cfg->settings.ecg.gain);
-		LOG_DBG("└── etag: %d", data->edata.payload.etag);
-		LOG_DBG("└── payload (ecg): %d", data->edata.payload.ecg);
+		// LOG_DBG("└── etag: %d", data->edata.payload.etag);
+		// LOG_DBG("└── payload (ecg): %d", data->edata.payload.ecg);
 
-		max30001_ecg_voltage(cfg->settings.ecg.gain,
-				     data->edata.payload.ecg,
-				     &val->val1);
+		// max30001_ecg_voltage(cfg->settings.ecg.gain,
+		// 		     data->edata.payload.ecg,
+		// 		     &val->val1);
 		break;
 	// case SENSOR_CHAN_ACCEL_X:
 	// 	max30001_accel_ms(data->edata.header.accel_fs, data->edata.payload.accel.x, false,
@@ -240,8 +241,8 @@ static inline void max30001_submit_one_shot(const struct device *dev,
 	struct rtio_regs_list fifo_regs_list[] = {
 		{
 			REG_ECG_FIFO | REG_SPI_READ_BIT,
-			(uint8_t *)edata->payload.buf,
-			3,
+			edata->payload.ecg_fifo_data,
+			ARRAY_SIZE(edata->payload.ecg_fifo_data),
 		},
 	};
 
