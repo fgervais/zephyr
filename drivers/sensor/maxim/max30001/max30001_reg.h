@@ -63,17 +63,29 @@
 #define REG_PACE5_C		0x47
 #define REG_NO_OP2		0x7F
 
-/* Helper Macros for register manipulation */
-#define REG_INFO_ALT_BIT_PATTERN(val)		((val >> 20) & BIT_MASK(4))
 
-
-/* Misc. Defines */
 #define REG_INFO_PATTERN			(BIT(2) | BIT(0))
 #define REG_CNFG_GEN_EN_ECG			BIT(19)
 #define REG_CNFG_EMUX_ECG_OPENP			BIT(21)
 #define REG_CNFG_EMUX_ECG_OPENN			BIT(20)
 
 #define REG_ECG_FIFO_LEN			3
+#define REG_ECG_FIFO_ETAG_VALID_SAMPLE		0
+#define REG_ECG_FIFO_ETAG_FAST_MODE_SAMPLE	BIT(0)
+#define REG_ECG_FIFO_ETAG_VALID_SAMPLE_EOF	BIT(1)
+#define REG_ECG_FIFO_ETAG_FAST_MODE_EOF		(BIT(1) | BIT(0))
+#define REG_ECG_FIFO_ETAG_EMPTY			(BIT(2) | BIT(1))
+#define REG_ECG_FIFO_ETAG_OVERFLOW		(BIT(2) | BIT(1) | BIT(0))
+#define REG_ECG_FIFO_DATA_SIZE_BITS		18
+
+
+#define REG_INFO_ALT_BIT_PATTERN(val)		((val >> 20) & BIT_MASK(4))
+
+#define REG_ECG_FIFO_ETAG(val)			((val >> 3) & BIT_MASK(3))
+#define REG_ECG_FIFO_VOLTAGE_DATA(val)			((val >> 6) & BIT_MASK(18))
+
+
+
 
 
 /* Register Bank 0 */
@@ -174,8 +186,6 @@
 #define REG_FIFO_CONFIG3_FIFO_EN(val)			((val) & BIT_MASK(1))
 
 /* Misc. Defines */
-#define WHO_AM_I_MAX30001 0xE9
-
 #define REG_IREG_PREPARE_WRITE_ARRAY(base, reg, val)	{((base) >> 8) & 0xFF, reg, val}
 
 #define FIFO_HEADER_EXT_HEADER_EN(val)			(((val) & BIT_MASK(1)) << 7)

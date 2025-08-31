@@ -103,6 +103,7 @@ int max30001_convert_raw_to_q31(struct max30001_encoded_data *edata,
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
 		max30001_ecg_voltage(edata->header.ecg_gain, reading, &whole);
+		LOG_DBG("max30001_ecg_voltage: %d", whole);
 		break;
 	// case SENSOR_CHAN_ACCEL_XYZ:
 	// case SENSOR_CHAN_ACCEL_X:
@@ -312,6 +313,10 @@ static int max30001_one_shot_decode(const uint8_t *buffer,
 
 	LOG_DBG("max30001_one_shot_decode:");
 
+	LOG_DBG("fit: %d", *fit);
+	LOG_DBG("max_count: %d", max_count);
+	LOG_DBG("chan_spec.chan_idx: %d", chan_spec.chan_idx);
+
 	if (*fit != 0) {
 		return 0;
 	}
@@ -322,9 +327,37 @@ static int max30001_one_shot_decode(const uint8_t *buffer,
 
 	switch (chan_spec.chan_type) {
 	case SENSOR_CHAN_VOLTAGE:
+		uint8_t etag;
+		uint32_t cpu_ecg_fifo_data;
+		int32_t adc_counts;
+
 		channel_request = max30001_encode_channel(chan_spec.chan_type);
 		if ((channel_request & edata->header.channels) != channel_request) {
 			return -ENODATA;
+		}
+
+		cpu_ecg_fifo_data = sys_be24_to_cpu(
+			*(uint32_t *)edata->payload.ecg_fifo_data);
+		etag = REG_ECG_FIFO_ETAG(cpu_ecg_fifo_data);
+
+		LOG_DBG("ETAG: %d", etag);
+
+		switch (etag) {
+		case REG_ECG_FIFO_ETAG_VALID_SAMPLE:
+		case REG_ECG_FIFO_ETAG_VALID_SAMPLE_EOF:
+			LOG_DBG("Valid sample");
+			adc_counts = REG_ECG_FIFO_VOLTAGE_DATA(cpu_ecg_fifo_data);
+			adc_counts = sign_extend(adc_counts,
+					REG_ECG_FIFO_DATA_SIZE_BITS - 1);
+			break;
+		case REG_ECG_FIFO_ETAG_EMPTY:
+			LOG_DBG("FIFO empty");
+			return -ENODATA;
+		case REG_ECG_FIFO_ETAG_OVERFLOW:
+			LOG_DBG("FIFO overflow");
+			return -EOVERFLOW;
+		default:
+			return -ENOTSUP;
 		}
 
 		struct sensor_q31_data *out = data_out;
@@ -333,11 +366,17 @@ static int max30001_one_shot_decode(const uint8_t *buffer,
 		out->header.base_timestamp_ns = edata->header.timestamp;
 		out->header.reading_count = 1;
 
-		// max30001_convert_raw_to_q31(
-		// 	edata,
-		// 	chan_spec.chan_type,
-		// 	payload->readings[max30001_get_channel_position(chan_spec.chan_type)],
-		// 	&out->readings[0].voltage);
+		// adc_counts =
+		// 	((uint32_t)edata->payload.ecg_fifo_data[0] << 16) |
+		// 	((uint32_t)edata->payload.ecg_fifo_data[1] << 8) |
+		// 	((uint32_t)edata->payload.ecg_fifo_data[2]);
+
+		max30001_convert_raw_to_q31(
+			edata,
+			chan_spec.chan_type,
+			adc_counts,
+			&out->readings[0].voltage);
+
 		*fit = 1;
 		return 1;
 	// case SENSOR_CHAN_ACCEL_X:
