@@ -66,6 +66,22 @@ static inline int reg_read(const struct device *dev, uint8_t reg, uint32_t *val)
 	return err;
 }
 
+static int max30001_enable_ecg(const struct device *dev)
+{
+	struct max30001_data *data = dev->data;
+	int err;
+
+	err = reg_write(dev, REG_CNFG_GEN, REG_CNFG_GEN_EN_ECG);
+	if (err) {
+		LOG_ERR("Failed to enable ECG channel: %d", err);
+		return err;
+	}
+
+	data->ecg_enabled = true;
+
+	return 0;
+}
+
 static int max30001_sample_fetch(const struct device *dev,
 				 enum sensor_channel chan)
 {
@@ -99,7 +115,7 @@ static int max30001_channel_get(const struct device *dev,
 				enum sensor_channel chan,
 				struct sensor_value *val)
 {
-	struct max30001_data *data = dev->data;
+	// struct max30001_data *data = dev->data;
 	const struct max30001_config *cfg = dev->config;
 
 	switch (chan) {
@@ -248,6 +264,12 @@ static inline void max30001_submit_one_shot(const struct device *dev,
 
 	out_fifo_regs.rtio_regs_list = fifo_regs_list;
 	out_fifo_regs.rtio_regs_num = ARRAY_SIZE(fifo_regs_list);
+
+	if (!data->ecg_enabled) {
+		max30001_enable_ecg(dev);
+		/* Wait for first sample */
+		k_sleep(K_MSEC(10));
+	}
 
 	/*
 	 * Prepare rtio enabled bus to read IIS3DWB_OUTX_L_A register
@@ -426,11 +448,11 @@ static int max30001_init(const struct device *dev)
 		return err;
 	}
 
-	err = reg_write(dev, REG_CNFG_GEN, REG_CNFG_GEN_EN_ECG);
-	if (err) {
-		LOG_ERR("Failed to enable ECG channel: %d", err);
-		return err;
-	}
+	// err = reg_write(dev, REG_CNFG_GEN, REG_CNFG_GEN_EN_ECG);
+	// if (err) {
+	// 	LOG_ERR("Failed to enable ECG channel: %d", err);
+	// 	return err;
+	// }
 
 
 

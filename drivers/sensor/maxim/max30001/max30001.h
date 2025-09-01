@@ -144,6 +144,7 @@ struct max30001_stream {
 };
 
 struct max30001_data {
+	bool ecg_enabled;
 	struct {
 		struct rtio_iodev *iodev;
 		struct rtio *ctx;
