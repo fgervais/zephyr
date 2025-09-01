@@ -103,7 +103,7 @@ int max30001_convert_raw_to_q31(struct max30001_encoded_data *edata,
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
 		max30001_ecg_voltage(edata->header.ecg_gain, reading, &whole);
-		LOG_DBG("max30001_ecg_voltage: %d", whole);
+		// LOG_DBG("max30001_ecg_voltage: %d", whole);
 		break;
 	// case SENSOR_CHAN_ACCEL_XYZ:
 	// case SENSOR_CHAN_ACCEL_X:
@@ -311,11 +311,11 @@ static int max30001_one_shot_decode(const uint8_t *buffer,
 	uint8_t channel_request;
 	// int err;
 
-	LOG_DBG("max30001_one_shot_decode:");
+	// LOG_DBG("max30001_one_shot_decode:");
 
-	LOG_DBG("fit: %d", *fit);
-	LOG_DBG("max_count: %d", max_count);
-	LOG_DBG("chan_spec.chan_idx: %d", chan_spec.chan_idx);
+	// LOG_DBG("fit: %d", *fit);
+	// LOG_DBG("max_count: %d", max_count);
+	// LOG_DBG("chan_spec.chan_idx: %d", chan_spec.chan_idx);
 
 	if (*fit != 0) {
 		return 0;
@@ -340,12 +340,12 @@ static int max30001_one_shot_decode(const uint8_t *buffer,
 			*(uint32_t *)edata->payload.ecg_fifo_data);
 		etag = REG_ECG_FIFO_ETAG(cpu_ecg_fifo_data);
 
-		LOG_DBG("ETAG: %d", etag);
+		// LOG_DBG("ETAG: %d", etag);
 
 		switch (etag) {
 		case REG_ECG_FIFO_ETAG_VALID_SAMPLE:
 		case REG_ECG_FIFO_ETAG_VALID_SAMPLE_EOF:
-			LOG_DBG("Valid sample");
+			// LOG_DBG("Valid sample");
 			adc_counts = REG_ECG_FIFO_VOLTAGE_DATA(cpu_ecg_fifo_data);
 			adc_counts = sign_extend(adc_counts,
 					REG_ECG_FIFO_DATA_SIZE_BITS - 1);
