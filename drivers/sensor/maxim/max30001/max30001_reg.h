@@ -66,8 +66,18 @@
 
 #define REG_INFO_PATTERN			(BIT(2) | BIT(0))
 #define REG_CNFG_GEN_EN_ECG			BIT(19)
+
+#define REG_CNFG_CAL_EN_VCAL			BIT(22)
+#define REG_CNFG_CAL_VMODE			BIT(21)
+#define REG_CNFG_CAL_FCAL_1HZ			BIT(14)
+#define REG_CNFG_CAL_FIFTY			BIT(11)
+
 #define REG_CNFG_EMUX_ECG_OPENP			BIT(21)
 #define REG_CNFG_EMUX_ECG_OPENN			BIT(20)
+#define REG_CNFG_EMUX_ECG_CALP_VMID		BIT(18)
+#define REG_CNFG_EMUX_ECG_CALP_VCALP		BIT(19)
+#define REG_CNFG_EMUX_ECG_CALN_VMID		BIT(16)
+#define REG_CNFG_EMUX_ECG_CALN_VCALN		(BIT(17) | BIT(16))
 
 #define REG_ECG_FIFO_LEN			3
 #define REG_ECG_FIFO_ETAG_VALID_SAMPLE		0
@@ -82,7 +92,7 @@
 #define REG_INFO_ALT_BIT_PATTERN(val)		((val >> 20) & BIT_MASK(4))
 
 #define REG_ECG_FIFO_ETAG(val)			((val >> 3) & BIT_MASK(3))
-#define REG_ECG_FIFO_VOLTAGE_DATA(val)			((val >> 6) & BIT_MASK(18))
+#define REG_ECG_FIFO_VOLTAGE_DATA(val)		((val >> 6) & BIT_MASK(18))
 
 
 

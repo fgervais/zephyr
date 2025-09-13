@@ -66,6 +66,71 @@ static inline int reg_read(const struct device *dev, uint8_t reg, uint32_t *val)
 	return err;
 }
 
+static int max30001_connect_electrodes(const struct device *dev)
+{
+	int err;
+
+	err = reg_write(dev, REG_CNFG_EMUX,
+			!REG_CNFG_EMUX_ECG_OPENP |
+			!REG_CNFG_EMUX_ECG_OPENN);
+	if (err) {
+		LOG_ERR("Failed to configure the input multiplexer: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int max30001_disconnect_electrodes(const struct device *dev)
+{
+	int err;
+
+	err = reg_write(dev, REG_CNFG_EMUX,
+			REG_CNFG_EMUX_ECG_OPENP |
+			REG_CNFG_EMUX_ECG_OPENN);
+	if (err) {
+		LOG_ERR("Failed to configure the input multiplexer: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int max30001_connect_calibration(const struct device *dev)
+{
+	int err;
+
+	err = reg_write(dev, REG_CNFG_EMUX,
+			REG_CNFG_EMUX_ECG_OPENP |
+			REG_CNFG_EMUX_ECG_OPENN |
+			// REG_CNFG_EMUX_ECG_CALP_VCALP |
+			REG_CNFG_EMUX_ECG_CALP_VMID |
+			REG_CNFG_EMUX_ECG_CALN_VCALN);
+	if (err) {
+		LOG_ERR("Failed to configure the input multiplexer: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int max30001_enable_calibration(const struct device *dev)
+{
+	int err;
+
+	err = reg_write(dev, REG_CNFG_CAL,
+			REG_CNFG_CAL_EN_VCAL |
+			// REG_CNFG_CAL_VMODE |
+			REG_CNFG_CAL_FCAL_1HZ |
+			REG_CNFG_CAL_FIFTY);
+	if (err) {
+		LOG_ERR("Failed to enable calibration: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static int max30001_enable_ecg(const struct device *dev)
 {
 	struct max30001_data *data = dev->data;
@@ -440,13 +505,13 @@ static int max30001_init(const struct device *dev)
 
 	/* Sensor Configuration */
 
-	err = reg_write(dev, REG_CNFG_EMUX,
-			!REG_CNFG_EMUX_ECG_OPENP |
-			!REG_CNFG_EMUX_ECG_OPENN);
-	if (err) {
-		LOG_ERR("Failed to configure the input multiplexer: %d", err);
-		return err;
-	}
+	// err = reg_write(dev, REG_CNFG_EMUX,
+	// 		!REG_CNFG_EMUX_ECG_OPENP |
+	// 		!REG_CNFG_EMUX_ECG_OPENN);
+	// if (err) {
+	// 	LOG_ERR("Failed to configure the input multiplexer: %d", err);
+	// 	return err;
+	// }
 
 	// err = reg_write(dev, REG_CNFG_GEN, REG_CNFG_GEN_EN_ECG);
 	// if (err) {
@@ -455,6 +520,17 @@ static int max30001_init(const struct device *dev)
 	// }
 
 
+	max30001_connect_calibration(dev);
+	if (err) {
+		LOG_ERR("Failed to disconnect electrodes: %d", err);
+		return err;
+	}
+
+	max30001_enable_calibration(dev);
+	if (err) {
+		LOG_ERR("Failed to enable calibration: %d", err);
+		return err;
+	}
 
 
 

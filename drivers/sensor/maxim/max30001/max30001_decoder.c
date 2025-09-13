@@ -361,7 +361,7 @@ static int max30001_one_shot_decode(const uint8_t *buffer,
 		}
 
 		struct sensor_q31_data *out = data_out;
-		struct max30001_encoded_payload *payload = &edata->payload;
+		// struct max30001_encoded_payload *payload = &edata->payload;
 
 		out->header.base_timestamp_ns = edata->header.timestamp;
 		out->header.reading_count = 1;
