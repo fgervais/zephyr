@@ -131,6 +131,22 @@ static int max30001_enable_calibration(const struct device *dev)
 	return 0;
 }
 
+static int max30001_configure_ecg(const struct device *dev)
+{
+	int err;
+
+	err = reg_write(dev, REG_CNFG_ECG,
+			REG_CNFG_ECG_RATE_SLOW |
+			REG_CNFG_ECG_DHPF_BYPASS |
+			REG_CNFG_ECG_DLPF_BYPASS);
+	if (err) {
+		LOG_ERR("Failed to configure_ecg: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static int max30001_enable_ecg(const struct device *dev)
 {
 	struct max30001_data *data = dev->data;
@@ -523,6 +539,12 @@ static int max30001_init(const struct device *dev)
 	max30001_connect_calibration(dev);
 	if (err) {
 		LOG_ERR("Failed to disconnect electrodes: %d", err);
+		return err;
+	}
+
+	max30001_configure_ecg(dev);
+	if (err) {
+		LOG_ERR("Failed to configure ecg: %d", err);
 		return err;
 	}
 
